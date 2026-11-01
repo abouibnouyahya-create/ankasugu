@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "881674578296",
+    "project_id": "ankasugu-f4f8b",
+    "storage_bucket": "ankasugu-f4f8b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:881674578296:android:ec930e5d88e7d44f5dc08d",
+        "android_client_info": {
+          "package_name": "com.example.app_mali"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA500kA9sPjbw3ym3oqUmzVito7F6qW2Q0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

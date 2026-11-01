@@ -1,15 +1,15 @@
 #!/bin/bash
 set -e
 
-echo "Installing Flutter..."
-FLUTTER_SDK_PATH="$HOME/flutter"
-if [ ! -d "$FLUTTER_SDK_PATH" ]; then
-  git clone --branch stable https://github.com/flutter/flutter.git $FLUTTER_SDK_PATH
+# Télécharge Flutter s'il n'est pas déjà là
+if [ ! -d "flutter" ]; then
+  git clone https://github.com/flutter/flutter.git -b stable
 fi
-export PATH="$FLUTTER_SDK_PATH/bin:$PATH"
 
-echo "Getting dependencies..."
+# Ajoute Flutter au PATH
+export PATH="$PATH:`pwd`/flutter/bin"
+
+# Active le web et compile
+flutter config --enable-web
 flutter pub get
-
-echo "Building web..."
 flutter build web --release

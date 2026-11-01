@@ -21,32 +21,18 @@ class MonApplication extends StatelessWidget {
       title: 'AnKaSugu',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.orange, // Style Alibaba
-        scaffoldBackgroundColor: Colors.grey[100], // Fond gris clair
+        primarySwatch: Colors.orange,
+        scaffoldBackgroundColor: Colors.grey[100],
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(color: Colors.orange),
-              ),
-            );
-          }
-          if (snapshot.hasData) {
-            return const PagePrincipale();
-          }
-          return const EcranConnexion();
-        },
-      ),
+      // ON LANCE DIRECTEMENT LA PAGE PRINCIPALE (PAS DE BLOCAGE)
+      home: const PagePrincipale(),
     );
   }
 }
 
-// --- ÉCRAN DE CONNEXION (Style moderne) ---
+// --- ÉCRAN DE CONNEXION (Pour les vendeurs) ---
 class EcranConnexion extends StatefulWidget {
   const EcranConnexion({super.key});
 
@@ -77,6 +63,8 @@ class _EcranConnexionState extends State<EcranConnexion> {
           password: _passwordController.text.trim(),
         );
       }
+      if (!mounted) return;
+      Navigator.pop(context); // Retour à la page précédente après connexion
     } on FirebaseAuthException catch (e) {
       String message = "Erreur de connexion.";
       if (e.code == 'user-not-found') message = "Aucun compte trouvé.";
@@ -97,15 +85,17 @@ class _EcranConnexionState extends State<EcranConnexion> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Espace Vendeur"),
+        backgroundColor: const Color(0xFFFF6D00),
+        foregroundColor: Colors.white,
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFF6D00),
-              Color(0xFFF5F7FA),
-            ], // Dégradé Orange vers Gris
+            colors: [Color(0xFFFF6D00), Color(0xFFF5F7FA)],
           ),
         ),
         child: Center(
@@ -135,7 +125,7 @@ class _EcranConnexionState extends State<EcranConnexion> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      _isLogin ? "Bienvenue sur AnKaSugu" : "Devenir Vendeur",
+                      _isLogin ? "Connexion Vendeur" : "Créer un compte",
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -185,7 +175,6 @@ class _EcranConnexionState extends State<EcranConnexion> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: 0,
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
@@ -251,16 +240,15 @@ class PagePrincipale extends StatefulWidget {
 class _PagePrincipaleState extends State<PagePrincipale> {
   int _indexActif = 0;
 
-  // On ajoute des pages temporaires pour éviter le crash
   final List<Widget> _pages = [
-    const EcranRecherche(), // Index 0
+    const EcranRecherche(), // 0: Accueil public
     const Scaffold(
       body: Center(child: Text("Page Catégories (Bientôt)")),
-    ), // Index 1
+    ), // 1: Catégories
     const Scaffold(
       body: Center(child: Text("Votre Panier est vide")),
-    ), // Index 2
-    const EcranProfil(), // Index 3
+    ), // 2: Panier
+    const EcranProfil(), // 3: Profil (Vendeur)
   ];
 
   @override
@@ -291,7 +279,7 @@ class _PagePrincipaleState extends State<PagePrincipale> {
   }
 }
 
-// --- ÉCRAN D'ACCUEIL (Recherche - Style Alibaba) ---
+// --- ÉCRAN D'ACCUEIL (Public, pas besoin de compte) ---
 class EcranRecherche extends StatefulWidget {
   const EcranRecherche({super.key});
 
@@ -486,17 +474,15 @@ class _EcranRechercheState extends State<EcranRecherche> {
                 width: 90,
                 height: 90,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 90,
-                    height: 90,
-                    color: Colors.grey[200],
-                    child: const Icon(
-                      Icons.image_not_supported,
-                      color: Colors.grey,
-                    ),
-                  );
-                },
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 90,
+                  height: 90,
+                  color: Colors.grey[200],
+                  child: const Icon(
+                    Icons.image_not_supported,
+                    color: Colors.grey,
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 15),
@@ -585,7 +571,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- BARRE DE RECHERCHE ---
                   Container(
                     color: const Color(0xFFFF6D00),
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -614,8 +599,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
                       ),
                     ),
                   ),
-
-                  // --- BANNIÈRE ---
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Container(
@@ -646,8 +629,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
                       ),
                     ),
                   ),
-
-                  // --- CARROUSEL À LA UNE ---
                   if (produitsALaUne.isNotEmpty &&
                       _controller.text.isEmpty) ...[
                     const Padding(
@@ -736,8 +717,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
                       ),
                     ),
                   ],
-
-                  // --- CATÉGORIES ---
                   const Padding(
                     padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
                     child: Text(
@@ -784,8 +763,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
                       },
                     ),
                   ),
-
-                  // --- LISTE DES PRODUITS ---
                   const Padding(
                     padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
                     child: Text(
@@ -819,105 +796,118 @@ class _EcranRechercheState extends State<EcranRecherche> {
   }
 }
 
-// --- ÉCRAN PROFIL ---
+// --- ÉCRAN PROFIL (Vérifie si connecté) ---
 class EcranProfil extends StatelessWidget {
   const EcranProfil({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Si l'utilisateur n'est PAS connecté, on affiche l'écran de connexion
+        if (!snapshot.hasData) {
+          return const EcranConnexion();
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mon Espace'),
-        backgroundColor: const Color(0xFFFF6D00),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFFF6D00), width: 2),
-                ),
-                child: const Icon(
-                  Icons.store,
-                  size: 60,
-                  color: Color(0xFFFF6D00),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                user?.email ?? "Vendeur AnKaSugu",
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 40),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EcranAjouterProduit(),
-                  ),
-                ),
-                icon: const Icon(Icons.add_business, color: Colors.white),
-                label: const Text(
-                  "Ajouter un nouveau produit",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF6D00),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                  minimumSize: const Size(double.infinity, 55),
-                ),
-              ),
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                },
-                icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text(
-                  "Se déconnecter",
-                  style: TextStyle(color: Colors.red, fontSize: 16),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  side: const BorderSide(color: Colors.red),
-                  minimumSize: const Size(double.infinity, 55),
-                ),
-              ),
-            ],
+        // Si l'utilisateur EST connecté, on affiche son profil
+        final user = snapshot.data;
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Mon Espace Vendeur'),
+            backgroundColor: const Color(0xFFFF6D00),
+            foregroundColor: Colors.white,
+            elevation: 0,
           ),
-        ),
-      ),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFFF6D00),
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.store,
+                      size: 60,
+                      color: Color(0xFFFF6D00),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    user?.email ?? "Vendeur AnKaSugu",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EcranAjouterProduit(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add_business, color: Colors.white),
+                    label: const Text(
+                      "Ajouter un nouveau produit",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6D00),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 30,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 55),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut();
+                    },
+                    icon: const Icon(Icons.logout, color: Colors.red),
+                    label: const Text(
+                      "Se déconnecter",
+                      style: TextStyle(color: Colors.red, fontSize: 16),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 30,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: const BorderSide(color: Colors.red),
+                      minimumSize: const Size(double.infinity, 55),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1022,7 +1012,6 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-
             TextField(
               controller: _imageController,
               decoration: InputDecoration(
@@ -1037,7 +1026,6 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               onChanged: (value) => setState(() {}),
             ),
             const SizedBox(height: 15),
-
             DropdownButtonFormField<String>(
               value: _categorieSelectionnee,
               decoration: InputDecoration(
@@ -1115,7 +1103,6 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 30),
-
             ElevatedButton(
               onPressed: _isSaving ? null : _sauvegarderProduit,
               style: ElevatedButton.styleFrom(

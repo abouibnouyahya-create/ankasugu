@@ -26,193 +26,19 @@ class MonApplication extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-      // ON LANCE DIRECTEMENT LA PAGE PRINCIPALE (PAS DE BLOCAGE)
       home: const PagePrincipale(),
     );
   }
 }
 
-// --- ÉCRAN DE CONNEXION (Pour les vendeurs) ---
-class EcranConnexion extends StatefulWidget {
-  const EcranConnexion({super.key});
-
-  @override
-  State<EcranConnexion> createState() => _EcranConnexionState();
-}
-
-class _EcranConnexionState extends State<EcranConnexion> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLogin = true;
-  bool _isLoading = false;
-
-  Future<void> _soumettre() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty)
-      return;
-
-    setState(() => _isLoading = true);
-    try {
-      if (_isLogin) {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-      } else {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-      }
-      if (!mounted) return;
-      Navigator.pop(context); // Retour à la page précédente après connexion
-    } on FirebaseAuthException catch (e) {
-      String message = "Erreur de connexion.";
-      if (e.code == 'user-not-found') message = "Aucun compte trouvé.";
-      if (e.code == 'wrong-password') message = "Mot de passe incorrect.";
-      if (e.code == 'email-already-in-use') message = "Email déjà utilisé.";
-      if (e.code == 'weak-password')
-        message = "Mot de passe trop court (6 min).";
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Espace Vendeur"),
-        backgroundColor: const Color(0xFFFF6D00),
-        foregroundColor: Colors.white,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFF6D00), Color(0xFFF5F7FA)],
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[50],
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.storefront,
-                        size: 60,
-                        color: Color(0xFFFF6D00),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      _isLogin ? "Connexion Vendeur" : "Créer un compte",
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 30),
-                    TextField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: "Email",
-                        prefixIcon: const Icon(
-                          Icons.email_outlined,
-                          color: Color(0xFFFF6D00),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 15),
-                    TextField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: "Mot de passe",
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                          color: Color(0xFFFF6D00),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 25),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _soumettre,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF6D00),
-                        minimumSize: const Size(double.infinity, 55),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              _isLogin ? "Se connecter" : "S'inscrire",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(() => _isLogin = !_isLogin),
-                      child: Text(
-                        _isLogin
-                            ? "Pas de compte ? S'inscrire"
-                            : "Déjà un compte ? Se connecter",
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// --- MODÈLE DE DONNÉES ---
+// --- MODÈLE DE DONNÉES (Ajout de videoUrl) ---
 class Produit {
   final String id;
   final String nom;
   final String prix;
   final String boutique;
   final String imageUrl;
+  final String videoUrl; // NOUVEAU
   final String telephone;
   final String categorie;
   final String vendeurId;
@@ -223,13 +49,14 @@ class Produit {
     this.prix,
     this.boutique,
     this.imageUrl,
+    this.videoUrl,
     this.telephone,
     this.categorie,
     this.vendeurId,
   );
 }
 
-// --- PAGE PRINCIPALE (Navigation) ---
+// --- PAGE PRINCIPALE ---
 class PagePrincipale extends StatefulWidget {
   const PagePrincipale({super.key});
 
@@ -241,14 +68,10 @@ class _PagePrincipaleState extends State<PagePrincipale> {
   int _indexActif = 0;
 
   final List<Widget> _pages = [
-    const EcranRecherche(), // 0: Accueil public
-    const Scaffold(
-      body: Center(child: Text("Page Catégories (Bientôt)")),
-    ), // 1: Catégories
-    const Scaffold(
-      body: Center(child: Text("Votre Panier est vide")),
-    ), // 2: Panier
-    const EcranProfil(), // 3: Profil (Vendeur)
+    const EcranRecherche(),
+    const Scaffold(body: Center(child: Text("Page Catégories (Bientôt)"))),
+    const Scaffold(body: Center(child: Text("Votre Panier est vide"))),
+    const EcranProfil(),
   ];
 
   @override
@@ -279,7 +102,7 @@ class _PagePrincipaleState extends State<PagePrincipale> {
   }
 }
 
-// --- ÉCRAN D'ACCUEIL (Public, pas besoin de compte) ---
+// --- ÉCRAN DE RECHERCHE (Public) ---
 class EcranRecherche extends StatefulWidget {
   const EcranRecherche({super.key});
 
@@ -322,6 +145,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
             data['prix'] ?? '0 FCFA',
             data['boutique'] ?? 'Inconnue',
             data['imageUrl'] ?? '',
+            data['videoUrl'] ?? '', // Récupération de la vidéo
             data['telephone'] ?? '',
             data['categorie'] ?? 'Autres',
             data['vendeurId'] ?? '',
@@ -380,6 +204,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
     }
   }
 
+  // --- AFFICHAGE DES DÉTAILS AVEC VIDÉO ---
   void _afficherDetails(Produit produit) {
     showDialog(
       context: context,
@@ -392,40 +217,89 @@ class _EcranRechercheState extends State<EcranRecherche> {
             produit.nom,
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  produit.imageUrl,
-                  height: 180,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.broken_image, size: 150),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    produit.imageUrl,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.broken_image, size: 150),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                "Catégorie : ${produit.categorie}",
-                style: const TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Prix : ${produit.prix} FCFA",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: Color(0xFFFF6D00),
+                const SizedBox(height: 15),
+
+                // BOUTON VIDÉO SI DISPONIBLE
+                if (produit.videoUrl.isNotEmpty) ...[
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final url = Uri.parse(produit.videoUrl);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      } else {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Lien vidéo invalide"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.play_circle_fill,
+                      color: Colors.red,
+                      size: 24,
+                    ),
+                    label: const Text(
+                      "Voir la vidéo du produit",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                ],
+
+                Text(
+                  "Catégorie : ${produit.categorie}",
+                  style: const TextStyle(color: Colors.grey),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Boutique : ${produit.boutique}",
-                style: const TextStyle(fontSize: 16),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  "Prix : ${produit.prix} FCFA",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Color(0xFFFF6D00),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Boutique : ${produit.boutique}",
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -467,23 +341,45 @@ class _EcranRechercheState extends State<EcranRecherche> {
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                produit.imageUrl,
-                width: 90,
-                height: 90,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 90,
-                  height: 90,
-                  color: Colors.grey[200],
-                  child: const Icon(
-                    Icons.image_not_supported,
-                    color: Colors.grey,
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    produit.imageUrl,
+                    width: 90,
+                    height: 90,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 90,
+                      height: 90,
+                      color: Colors.grey[200],
+                      child: const Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                // BADGE VIDÉO sur la miniature
+                if (produit.videoUrl.isNotEmpty)
+                  Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 15),
             Expanded(
@@ -661,26 +557,49 @@ class _EcranRechercheState extends State<EcranRecherche> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(12),
-                                    ),
-                                    child: Image.network(
-                                      produit.imageUrl,
-                                      height: 120,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
-                                                height: 120,
-                                                color: Colors.grey[200],
-                                                child: const Icon(
-                                                  Icons.image,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                    ),
+                                  Stack(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(12),
+                                            ),
+                                        child: Image.network(
+                                          produit.imageUrl,
+                                          height: 120,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  Container(
+                                                    height: 120,
+                                                    color: Colors.grey[200],
+                                                    child: const Icon(
+                                                      Icons.image,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                        ),
+                                      ),
+                                      if (produit.videoUrl.isNotEmpty)
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: const Icon(
+                                              Icons.play_arrow,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
@@ -796,7 +715,168 @@ class _EcranRechercheState extends State<EcranRecherche> {
   }
 }
 
-// --- ÉCRAN PROFIL (Vérifie si connecté) ---
+// --- ÉCRAN DE CONNEXION ---
+class EcranConnexion extends StatefulWidget {
+  const EcranConnexion({super.key});
+  @override
+  State<EcranConnexion> createState() => _EcranConnexionState();
+}
+
+class _EcranConnexionState extends State<EcranConnexion> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLogin = true;
+  bool _isLoading = false;
+
+  Future<void> _soumettre() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty)
+      return;
+    setState(() => _isLoading = true);
+    try {
+      if (_isLogin) {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      } else {
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = "Erreur de connexion.";
+      if (e.code == 'user-not-found') message = "Aucun compte trouvé.";
+      if (e.code == 'wrong-password') message = "Mot de passe incorrect.";
+      if (e.code == 'email-already-in-use') message = "Email déjà utilisé.";
+      if (e.code == 'weak-password') message = "Mot de passe trop court.";
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFF6D00), Color(0xFFF5F7FA)],
+        ),
+      ),
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Card(
+            elevation: 8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.storefront,
+                      size: 60,
+                      color: Color(0xFFFF6D00),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    _isLogin ? "Espace Vendeur" : "Devenir Vendeur",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 30),
+                  TextField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: "Email",
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: Color(0xFFFF6D00),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 15),
+                  TextField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: "Mot de passe",
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: Color(0xFFFF6D00),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 25),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _soumettre,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6D00),
+                      minimumSize: const Size(double.infinity, 55),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            _isLogin ? "Se connecter" : "S'inscrire",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                  TextButton(
+                    onPressed: () => setState(() => _isLogin = !_isLogin),
+                    child: Text(
+                      _isLogin
+                          ? "Pas de compte ? S'inscrire"
+                          : "Déjà un compte ? Se connecter",
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- ÉCRAN PROFIL (Gestion des produits du vendeur) ---
 class EcranProfil extends StatelessWidget {
   const EcranProfil({super.key});
 
@@ -805,12 +885,10 @@ class EcranProfil extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Si l'utilisateur n'est PAS connecté, on affiche l'écran de connexion
         if (!snapshot.hasData) {
           return const EcranConnexion();
         }
 
-        // Si l'utilisateur EST connecté, on affiche son profil
         final user = snapshot.data;
         return Scaffold(
           appBar: AppBar(
@@ -819,92 +897,201 @@ class EcranProfil extends StatelessWidget {
             foregroundColor: Colors.white,
             elevation: 0,
           ),
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.orange[50],
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFFFF6D00),
-                        width: 2,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.store,
-                      size: 60,
-                      color: Color(0xFFFF6D00),
-                    ),
+          body: Column(
+            children: [
+              // EN-TÊTE DU PROFIL
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF6D00),
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(20),
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    user?.email ?? "Vendeur AnKaSugu",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const EcranAjouterProduit(),
-                      ),
-                    ),
-                    icon: const Icon(Icons.add_business, color: Colors.white),
-                    label: const Text(
-                      "Ajouter un nouveau produit",
-                      style: TextStyle(
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(15),
+                      decoration: const BoxDecoration(
                         color: Colors.white,
-                        fontSize: 16,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.store,
+                        size: 40,
+                        color: Color(0xFFFF6D00),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      user?.email ?? "Vendeur AnKaSugu",
+                      style: const TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6D00),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 30,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                      minimumSize: const Size(double.infinity, 55),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      await FirebaseAuth.instance.signOut();
-                    },
-                    icon: const Icon(Icons.logout, color: Colors.red),
-                    label: const Text(
-                      "Se déconnecter",
-                      style: TextStyle(color: Colors.red, fontSize: 16),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 30,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      side: const BorderSide(color: Colors.red),
-                      minimumSize: const Size(double.infinity, 55),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+
+              // BOUTON D'AJOUT
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EcranAjouterProduit(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add_business, color: Colors.white),
+                  label: const Text(
+                    "Ajouter un nouveau produit",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF6D00),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                    minimumSize: const Size(double.infinity, 55),
+                  ),
+                ),
+              ),
+
+              // LISTE DES PRODUITS DU VENDEUR
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Mes produits en vente",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('produits')
+                      .where('vendeurId', isEqualTo: user?.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFFFF6D00),
+                        ),
+                      );
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          "Vous n'avez pas encore ajouté de produit.",
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: snapshot.data!.docs.length,
+                      itemBuilder: (context, index) {
+                        final doc = snapshot.data!.docs[index];
+                        final data = doc.data() as Map<String, dynamic>;
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: ListTile(
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                data['imageUrl'] ?? '',
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.image),
+                              ),
+                            ),
+                            title: Text(data['nom'] ?? 'Sans nom'),
+                            subtitle: Text("${data['prix']} FCFA"),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () async {
+                                // Confirmation de suppression
+                                bool? confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text("Supprimer le produit ?"),
+                                    content: const Text(
+                                      "Voulez-vous vraiment retirer ce produit de la vente ?",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text("Annuler"),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                        ),
+                                        child: const Text(
+                                          "Supprimer",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  await FirebaseFirestore.instance
+                                      .collection('produits')
+                                      .doc(doc.id)
+                                      .delete();
+                                }
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+
+              // BOUTON DE DÉCONNEXION
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await FirebaseAuth.instance.signOut();
+                  },
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  label: const Text(
+                    "Se déconnecter",
+                    style: TextStyle(color: Colors.red, fontSize: 16),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: const BorderSide(color: Colors.red),
+                    minimumSize: const Size(double.infinity, 55),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -912,7 +1099,7 @@ class EcranProfil extends StatelessWidget {
   }
 }
 
-// --- ÉCRAN D'AJOUT DE PRODUIT ---
+// --- ÉCRAN D'AJOUT DE PRODUIT (Avec champ Vidéo) ---
 class EcranAjouterProduit extends StatefulWidget {
   const EcranAjouterProduit({super.key});
 
@@ -925,6 +1112,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
   final _prixController = TextEditingController();
   final _boutiqueController = TextEditingController();
   final _imageController = TextEditingController();
+  final _videoController = TextEditingController(); // NOUVEAU
   final _telephoneController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isSaving = false;
@@ -963,6 +1151,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
         'imageUrl': _imageController.text.isEmpty
             ? "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=80"
             : _imageController.text,
+        'videoUrl': _videoController.text, // NOUVEAU
         'telephone': _telephoneController.text,
         'categorie': _categorieSelectionnee,
         'vendeurId': user?.uid,
@@ -973,6 +1162,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
       _prixController.clear();
       _boutiqueController.clear();
       _imageController.clear();
+      _videoController.clear();
       _telephoneController.clear();
 
       if (!mounted) return;
@@ -1012,6 +1202,8 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
+
+            // CHAMP IMAGE
             TextField(
               controller: _imageController,
               decoration: InputDecoration(
@@ -1026,6 +1218,27 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               onChanged: (value) => setState(() {}),
             ),
             const SizedBox(height: 15),
+
+            // CHAMP VIDÉO (NOUVEAU)
+            TextField(
+              controller: _videoController,
+              decoration: InputDecoration(
+                labelText: "Lien de la vidéo (TikTok, YouTube...)",
+                prefixIcon: const Icon(
+                  Icons.video_camera_front,
+                  color: Colors.red,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                fillColor: Colors.white,
+                filled: true,
+                helperText:
+                    "Optionnel. Collez le lien de la vidéo de votre produit.",
+              ),
+            ),
+            const SizedBox(height: 15),
+
             DropdownButtonFormField<String>(
               value: _categorieSelectionnee,
               decoration: InputDecoration(
@@ -1103,6 +1316,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 30),
+
             ElevatedButton(
               onPressed: _isSaving ? null : _sauvegarderProduit,
               style: ElevatedButton.styleFrom(

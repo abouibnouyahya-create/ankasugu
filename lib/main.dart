@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
 
@@ -31,14 +34,14 @@ class MonApplication extends StatelessWidget {
   }
 }
 
-// --- MODÈLE DE DONNÉES (Ajout de videoUrl) ---
+// --- MODÈLE DE DONNÉES ---
 class Produit {
   final String id;
   final String nom;
   final String prix;
   final String boutique;
   final String imageUrl;
-  final String videoUrl; // NOUVEAU
+  final String videoUrl;
   final String telephone;
   final String categorie;
   final String vendeurId;
@@ -54,9 +57,33 @@ class Produit {
     this.categorie,
     this.vendeurId,
   );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'nom': nom,
+    'prix': prix,
+    'boutique': boutique,
+    'imageUrl': imageUrl,
+    'videoUrl': videoUrl,
+    'telephone': telephone,
+    'categorie': categorie,
+    'vendeurId': vendeurId,
+  };
+
+  factory Produit.fromJson(Map<String, dynamic> json) => Produit(
+    json['id'] ?? '',
+    json['nom'] ?? '',
+    json['prix'] ?? '',
+    json['boutique'] ?? '',
+    json['imageUrl'] ?? '',
+    json['videoUrl'] ?? '',
+    json['telephone'] ?? '',
+    json['categorie'] ?? '',
+    json['vendeurId'] ?? '',
+  );
 }
 
-// --- PAGE PRINCIPALE ---
+// --- PAGE PRINCIPALE (Gestion du Panier global) ---
 class PagePrincipale extends StatefulWidget {
   const PagePrincipale({super.key});
 
@@ -66,18 +93,66 @@ class PagePrincipale extends StatefulWidget {
 
 class _PagePrincipaleState extends State<PagePrincipale> {
   int _indexActif = 0;
+  List<Produit> _panier = [];
 
-  final List<Widget> _pages = [
-    const EcranRecherche(),
-    const Scaffold(body: Center(child: Text("Page Catégories (Bientôt)"))),
-    const Scaffold(body: Center(child: Text("Votre Panier est vide"))),
-    const EcranProfil(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _chargerPanier();
+  }
+
+  Future<void> _chargerPanier() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? panierString = prefs.getString('panier');
+    if (panierString != null) {
+      final List<dynamic> decoded = jsonDecode(panierString);
+      setState(() {
+        _panier = decoded.map((item) => Produit.fromJson(item)).toList();
+      });
+    }
+  }
+
+  Future<void> _sauvegarderPanier() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String encoded = jsonEncode(_panier.map((p) => p.toJson()).toList());
+    await prefs.setString('panier', encoded);
+  }
+
+  void _ajouterAuPanier(Produit produit) {
+    setState(() {
+      _panier.add(produit);
+    });
+    _sauvegarderPanier();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("${produit.nom} ajouté au panier !"),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _retirerDuPanier(int index) {
+    setState(() {
+      _panier.removeAt(index);
+    });
+    _sauvegarderPanier();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_indexActif],
+      body: IndexedStack(
+        index: _indexActif,
+        children: [
+          EcranRecherche(onAjouterAuPanier: _ajouterAuPanier),
+          const Scaffold(
+            body: Center(child: Text("Page Catégories (Bientôt)")),
+          ),
+          EcranPanier(panier: _panier, onRetirer: _retirerDuPanier),
+          const EcranProfil(),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _indexActif,
         onTap: (index) => setState(() => _indexActif = index),
@@ -85,26 +160,38 @@ class _PagePrincipaleState extends State<PagePrincipale> {
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Accueil',
+          ),
+          const BottomNavigationBarItem(
             icon: Icon(Icons.category),
             label: 'Catégories',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
+            icon: Badge(
+              label: Text("${_panier.length}"),
+              isLabelVisible: _panier.isNotEmpty,
+              backgroundColor: Colors.red,
+              child: const Icon(Icons.shopping_cart),
+            ),
             label: 'Panier',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profil',
+          ),
         ],
       ),
     );
   }
 }
 
-// --- ÉCRAN DE RECHERCHE (Public) ---
+// --- ÉCRAN DE RECHERCHE ---
 class EcranRecherche extends StatefulWidget {
-  const EcranRecherche({super.key});
+  final Function(Produit) onAjouterAuPanier;
+  const EcranRecherche({super.key, required this.onAjouterAuPanier});
 
   @override
   State<EcranRecherche> createState() => _EcranRechercheState();
@@ -145,7 +232,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
             data['prix'] ?? '0 FCFA',
             data['boutique'] ?? 'Inconnue',
             data['imageUrl'] ?? '',
-            data['videoUrl'] ?? '', // Récupération de la vidéo
+            data['videoUrl'] ?? '',
             data['telephone'] ?? '',
             data['categorie'] ?? 'Autres',
             data['vendeurId'] ?? '',
@@ -204,7 +291,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
     }
   }
 
-  // --- AFFICHAGE DES DÉTAILS AVEC VIDÉO ---
   void _afficherDetails(Produit produit) {
     showDialog(
       context: context,
@@ -233,8 +319,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
                   ),
                 ),
                 const SizedBox(height: 15),
-
-                // BOUTON VIDÉO SI DISPONIBLE
                 if (produit.videoUrl.isNotEmpty) ...[
                   OutlinedButton.icon(
                     onPressed: () async {
@@ -279,7 +363,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
                   ),
                   const SizedBox(height: 15),
                 ],
-
                 Text(
                   "Catégorie : ${produit.categorie}",
                   style: const TextStyle(color: Colors.grey),
@@ -361,7 +444,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
                     ),
                   ),
                 ),
-                // BADGE VIDÉO sur la miniature
                 if (produit.videoUrl.isNotEmpty)
                   Positioned(
                     bottom: 4,
@@ -418,13 +500,25 @@ class _EcranRechercheState extends State<EcranRecherche> {
                 ],
               ),
             ),
-            IconButton(
-              icon: const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey,
-                size: 18,
-              ),
-              onPressed: () => _afficherDetails(produit),
+            Column(
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.grey,
+                    size: 18,
+                  ),
+                  onPressed: () => _afficherDetails(produit),
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.add_shopping_cart,
+                    color: Color(0xFFFF6D00),
+                  ),
+                  onPressed: () => widget.onAjouterAuPanier(produit),
+                  tooltip: "Ajouter au panier",
+                ),
+              ],
             ),
           ],
         ),
@@ -444,11 +538,33 @@ class _EcranRechercheState extends State<EcranRecherche> {
         foregroundColor: Colors.white,
         title: Row(
           children: [
-            const Icon(Icons.storefront, size: 28),
-            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.storefront,
+                size: 24,
+                color: Color(0xFFFF6D00),
+              ),
+            ),
+            const SizedBox(width: 10),
             const Text(
               'AnKaSugu',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                letterSpacing: 0.5,
+              ),
             ),
           ],
         ),
@@ -498,29 +614,57 @@ class _EcranRechercheState extends State<EcranRecherche> {
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Container(
-                      height: 120,
+                      height: 140,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF6D00), Color(0xFFFF9800)],
+                        image: const DecorationImage(
+                          image: NetworkImage(
+                            "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=800&q=80",
+                          ),
+                          fit: BoxFit.cover,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.orange.withOpacity(0.3),
+                            color: Colors.black.withOpacity(0.2),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
                         ],
                       ),
-                      child: const Center(
-                        child: Text(
-                          "Vendez vos produits\nsur AnKaSugu",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.black.withOpacity(0.7),
+                              Colors.transparent,
+                            ],
                           ),
+                        ),
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Text(
+                              "Vendez vos produits\nsur AnKaSugu",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              "Atteignez des milliers de clients",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -553,6 +697,12 @@ class _EcranRechercheState extends State<EcranRecherche> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 5,
+                                  ),
+                                ],
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -710,6 +860,181 @@ class _EcranRechercheState extends State<EcranRecherche> {
                   const SizedBox(height: 20),
                 ],
               ),
+            ),
+    );
+  }
+}
+
+// --- ÉCRAN DU PANIER ---
+class EcranPanier extends StatelessWidget {
+  final List<Produit> panier;
+  final Function(int) onRetirer;
+
+  const EcranPanier({super.key, required this.panier, required this.onRetirer});
+
+  void _commanderViaWhatsApp(BuildContext context) async {
+    if (panier.isEmpty) return;
+
+    String message =
+        "Bonjour AnKaSugu, je souhaite commander les produits suivants :\n\n";
+    int total = 0;
+
+    for (var produit in panier) {
+      message +=
+          "- ${produit.nom} (${produit.prix} FCFA) chez ${produit.boutique}\n";
+      // On essaie de calculer le total (attention aux formats de prix)
+      String prixNettoye = produit.prix.replaceAll(RegExp(r'[^0-9]'), '');
+      if (prixNettoye.isNotEmpty) {
+        total += int.parse(prixNettoye);
+      }
+    }
+
+    message += "\nTotal estimé : $total FCFA";
+    message += "\n\nMerci de me confirmer la disponibilité.";
+
+    // On envoie à un numéro générique ou au premier vendeur
+    // Pour l'instant, on utilise un numéro de test ou le premier de la liste
+    String numero = "22376000000"; // Remplacez par votre numéro admin
+    if (panier.isNotEmpty) {
+      numero = panier.first.telephone.replaceAll(RegExp(r'[^0-9]'), '');
+      if (numero.isNotEmpty && !numero.startsWith('223')) numero = '223$numero';
+    }
+
+    final url = Uri.parse(
+      "https://wa.me/$numero?text=${Uri.encodeComponent(message)}",
+    );
+
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Impossible d'ouvrir WhatsApp."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    int total = 0;
+    for (var p in panier) {
+      String prixNettoye = p.prix.replaceAll(RegExp(r'[^0-9]'), '');
+      if (prixNettoye.isNotEmpty) total += int.parse(prixNettoye);
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Mon Panier'),
+        backgroundColor: const Color(0xFFFF6D00),
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: panier.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 80,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    "Votre panier est vide",
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
+          : Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: panier.length,
+                    itemBuilder: (context, index) {
+                      final produit = panier[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: ListTile(
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              produit.imageUrl,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.image),
+                            ),
+                          ),
+                          title: Text(produit.nom),
+                          subtitle: Text("${produit.prix} FCFA"),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => onRetirer(index),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Total estimé :",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            "$total FCFA",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFF6D00),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      ElevatedButton.icon(
+                        onPressed: () => _commanderViaWhatsApp(context),
+                        icon: const Icon(Icons.chat, color: Colors.white),
+                        label: const Text(
+                          "Commander via WhatsApp",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          minimumSize: const Size(double.infinity, 55),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -876,7 +1201,7 @@ class _EcranConnexionState extends State<EcranConnexion> {
   }
 }
 
-// --- ÉCRAN PROFIL (Gestion des produits du vendeur) ---
+// --- ÉCRAN PROFIL ---
 class EcranProfil extends StatelessWidget {
   const EcranProfil({super.key});
 
@@ -899,7 +1224,6 @@ class EcranProfil extends StatelessWidget {
           ),
           body: Column(
             children: [
-              // EN-TÊTE DU PROFIL
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -935,8 +1259,6 @@ class EcranProfil extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // BOUTON D'AJOUT
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton.icon(
@@ -966,8 +1288,6 @@ class EcranProfil extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // LISTE DES PRODUITS DU VENDEUR
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Align(
@@ -985,20 +1305,18 @@ class EcranProfil extends StatelessWidget {
                       .where('vendeurId', isEqualTo: user?.uid)
                       .snapshots(),
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                    if (snapshot.connectionState == ConnectionState.waiting)
                       return const Center(
                         child: CircularProgressIndicator(
                           color: Color(0xFFFF6D00),
                         ),
                       );
-                    }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
                       return const Center(
                         child: Text(
                           "Vous n'avez pas encore ajouté de produit.",
                         ),
                       );
-                    }
 
                     return ListView.builder(
                       padding: const EdgeInsets.all(16),
@@ -1025,7 +1343,6 @@ class EcranProfil extends StatelessWidget {
                             trailing: IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () async {
-                                // Confirmation de suppression
                                 bool? confirm = await showDialog<bool>(
                                   context: context,
                                   builder: (context) => AlertDialog(
@@ -1068,8 +1385,6 @@ class EcranProfil extends StatelessWidget {
                   },
                 ),
               ),
-
-              // BOUTON DE DÉCONNEXION
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: OutlinedButton.icon(
@@ -1099,10 +1414,9 @@ class EcranProfil extends StatelessWidget {
   }
 }
 
-// --- ÉCRAN D'AJOUT DE PRODUIT (Avec champ Vidéo) ---
+// --- ÉCRAN D'AJOUT DE PRODUIT ---
 class EcranAjouterProduit extends StatefulWidget {
   const EcranAjouterProduit({super.key});
-
   @override
   State<EcranAjouterProduit> createState() => _EcranAjouterProduitState();
 }
@@ -1112,7 +1426,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
   final _prixController = TextEditingController();
   final _boutiqueController = TextEditingController();
   final _imageController = TextEditingController();
-  final _videoController = TextEditingController(); // NOUVEAU
+  final _videoController = TextEditingController();
   final _telephoneController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isSaving = false;
@@ -1151,7 +1465,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
         'imageUrl': _imageController.text.isEmpty
             ? "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=80"
             : _imageController.text,
-        'videoUrl': _videoController.text, // NOUVEAU
+        'videoUrl': _videoController.text,
         'telephone': _telephoneController.text,
         'categorie': _categorieSelectionnee,
         'vendeurId': user?.uid,
@@ -1202,8 +1516,6 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-
-            // CHAMP IMAGE
             TextField(
               controller: _imageController,
               decoration: InputDecoration(
@@ -1218,8 +1530,6 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               onChanged: (value) => setState(() {}),
             ),
             const SizedBox(height: 15),
-
-            // CHAMP VIDÉO (NOUVEAU)
             TextField(
               controller: _videoController,
               decoration: InputDecoration(
@@ -1238,7 +1548,6 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               ),
             ),
             const SizedBox(height: 15),
-
             DropdownButtonFormField<String>(
               value: _categorieSelectionnee,
               decoration: InputDecoration(
@@ -1316,7 +1625,6 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
               keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 30),
-
             ElevatedButton(
               onPressed: _isSaving ? null : _sauvegarderProduit,
               style: ElevatedButton.styleFrom(

@@ -1,17 +1,17 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MonApplication());
 }
 
@@ -46,44 +46,35 @@ class Produit {
   final String categorie;
   final String vendeurId;
 
-  Produit(
-    this.id,
-    this.nom,
-    this.prix,
-    this.boutique,
-    this.imageUrl,
-    this.videoUrl,
-    this.telephone,
-    this.categorie,
-    this.vendeurId,
-  );
+  Produit(this.id, this.nom, this.prix, this.boutique, this.imageUrl,
+      this.videoUrl, this.telephone, this.categorie, this.vendeurId);
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'nom': nom,
-    'prix': prix,
-    'boutique': boutique,
-    'imageUrl': imageUrl,
-    'videoUrl': videoUrl,
-    'telephone': telephone,
-    'categorie': categorie,
-    'vendeurId': vendeurId,
-  };
+        'id': id,
+        'nom': nom,
+        'prix': prix,
+        'boutique': boutique,
+        'imageUrl': imageUrl,
+        'videoUrl': videoUrl,
+        'telephone': telephone,
+        'categorie': categorie,
+        'vendeurId': vendeurId,
+      };
 
   factory Produit.fromJson(Map<String, dynamic> json) => Produit(
-    json['id'] ?? '',
-    json['nom'] ?? '',
-    json['prix'] ?? '',
-    json['boutique'] ?? '',
-    json['imageUrl'] ?? '',
-    json['videoUrl'] ?? '',
-    json['telephone'] ?? '',
-    json['categorie'] ?? '',
-    json['vendeurId'] ?? '',
-  );
+        json['id'] ?? '',
+        json['nom'] ?? '',
+        json['prix'] ?? '',
+        json['boutique'] ?? '',
+        json['imageUrl'] ?? '',
+        json['videoUrl'] ?? '',
+        json['telephone'] ?? '',
+        json['categorie'] ?? '',
+        json['vendeurId'] ?? '',
+      );
 }
 
-// --- PAGE PRINCIPALE (Gestion du Panier global) ---
+// --- PAGE PRINCIPALE ---
 class PagePrincipale extends StatefulWidget {
   const PagePrincipale({super.key});
 
@@ -125,10 +116,9 @@ class _PagePrincipaleState extends State<PagePrincipale> {
     _sauvegarderPanier();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("${produit.nom} ajouté au panier !"),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 1),
-      ),
+          content: Text("${produit.nom} ajouté au panier !"),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1)),
     );
   }
 
@@ -147,8 +137,7 @@ class _PagePrincipaleState extends State<PagePrincipale> {
         children: [
           EcranRecherche(onAjouterAuPanier: _ajouterAuPanier),
           const Scaffold(
-            body: Center(child: Text("Page Catégories (Bientôt)")),
-          ),
+              body: Center(child: Text("Page Catégories (Bientôt)"))),
           EcranPanier(panier: _panier, onRetirer: _retirerDuPanier),
           const EcranProfil(),
         ],
@@ -162,13 +151,9 @@ class _PagePrincipaleState extends State<PagePrincipale> {
         backgroundColor: Colors.white,
         items: [
           const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Accueil',
-          ),
+              icon: Icon(Icons.home), label: 'Accueil'),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.category),
-            label: 'Catégories',
-          ),
+              icon: Icon(Icons.category), label: 'Catégories'),
           BottomNavigationBarItem(
             icon: Badge(
               label: Text("${_panier.length}"),
@@ -179,9 +164,7 @@ class _PagePrincipaleState extends State<PagePrincipale> {
             label: 'Panier',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profil',
-          ),
+              icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );
@@ -211,7 +194,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
     'Téléphones',
     'Vêtements',
     'Chaussures',
-    'Autres',
+    'Autres'
   ];
   String _categorieSelectionnee = 'Tout';
 
@@ -248,13 +231,11 @@ class _EcranRechercheState extends State<EcranRecherche> {
     setState(() {
       final texteTape = _controller.text.toLowerCase().trim();
       _resultats = _tousLesProduits.where((produit) {
-        final correspondCategorie =
-            _categorieSelectionnee == 'Tout' ||
+        final correspondCategorie = _categorieSelectionnee == 'Tout' ||
             produit.categorie == _categorieSelectionnee;
         final nomProduit = produit.nom.toLowerCase();
         final nomBoutique = produit.boutique.toLowerCase();
-        final correspondTexte =
-            texteTape.isEmpty ||
+        final correspondTexte = texteTape.isEmpty ||
             nomProduit.contains(texteTape) ||
             nomBoutique.contains(texteTape);
         return correspondCategorie && correspondTexte;
@@ -266,28 +247,21 @@ class _EcranRechercheState extends State<EcranRecherche> {
     String numero = produit.telephone.replaceAll(RegExp(r'[^0-9]'), '');
     if (numero.isNotEmpty && !numero.startsWith('223')) numero = '223$numero';
     final message = Uri.encodeComponent(
-      "Bonjour, je suis intéressé par votre produit : ${produit.nom} à ${produit.prix} sur AnKaSugu.",
-    );
+        "Bonjour, je suis intéressé par votre produit : ${produit.nom} à ${produit.prix} sur AnKaSugu.");
     final url = Uri.parse("https://wa.me/$numero?text=$message");
 
     if (numero.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text("Ce vendeur n'a pas renseigné de numéro."),
-          backgroundColor: Colors.red,
-        ),
-      );
+          backgroundColor: Colors.red));
       return;
     }
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text("Impossible d'ouvrir WhatsApp."),
-          backgroundColor: Colors.red,
-        ),
-      );
+          backgroundColor: Colors.red));
     }
   }
 
@@ -296,115 +270,83 @@ class _EcranRechercheState extends State<EcranRecherche> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            produit.nom,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(produit.nom,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    produit.imageUrl,
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.broken_image, size: 150),
-                  ),
-                ),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(produit.imageUrl,
+                        height: 180,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.broken_image, size: 150))),
                 const SizedBox(height: 15),
                 if (produit.videoUrl.isNotEmpty) ...[
                   OutlinedButton.icon(
                     onPressed: () async {
                       final url = Uri.parse(produit.videoUrl);
                       if (await canLaunchUrl(url)) {
-                        await launchUrl(
-                          url,
-                          mode: LaunchMode.externalApplication,
-                        );
+                        await launchUrl(url,
+                            mode: LaunchMode.externalApplication);
                       } else {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Lien vidéo invalide"),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
+                            const SnackBar(
+                                content: Text("Lien vidéo invalide"),
+                                backgroundColor: Colors.red));
                       }
                     },
-                    icon: const Icon(
-                      Icons.play_circle_fill,
-                      color: Colors.red,
-                      size: 24,
-                    ),
-                    label: const Text(
-                      "Voir la vidéo du produit",
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    icon: const Icon(Icons.play_circle_fill,
+                        color: Colors.red, size: 24),
+                    label: const Text("Voir la vidéo du produit",
+                        style: TextStyle(
+                            color: Colors.red, fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 20,
-                      ),
-                    ),
+                        side: const BorderSide(color: Colors.red),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 20)),
                   ),
                   const SizedBox(height: 15),
                 ],
-                Text(
-                  "Catégorie : ${produit.categorie}",
-                  style: const TextStyle(color: Colors.grey),
-                ),
+                Text("Catégorie : ${produit.categorie}",
+                    style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 8),
-                Text(
-                  "Prix : ${produit.prix} FCFA",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: Color(0xFFFF6D00),
-                  ),
-                ),
+                Text("Prix : ${produit.prix} FCFA",
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Color(0xFFFF6D00))),
                 const SizedBox(height: 8),
-                Text(
-                  "Boutique : ${produit.boutique}",
-                  style: const TextStyle(fontSize: 16),
-                ),
+                Text("Boutique : ${produit.boutique}",
+                    style: const TextStyle(fontSize: 16)),
               ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Fermer", style: TextStyle(color: Colors.grey)),
-            ),
+                onPressed: () => Navigator.of(context).pop(),
+                child:
+                    const Text("Fermer", style: TextStyle(color: Colors.grey))),
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(context).pop();
                 _contacterVendeur(produit);
               },
               icon: const Icon(Icons.chat, color: Colors.white, size: 18),
-              label: const Text(
-                "WhatsApp",
-                style: TextStyle(color: Colors.white),
-              ),
+              label:
+                  const Text("WhatsApp", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6D00),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+                  backgroundColor: const Color(0xFFFF6D00),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
             ),
           ],
         );
@@ -417,9 +359,8 @@ class _EcranRechercheState extends State<EcranRecherche> {
       margin: const EdgeInsets.only(bottom: 15),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade200)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
@@ -427,40 +368,28 @@ class _EcranRechercheState extends State<EcranRecherche> {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    produit.imageUrl,
-                    width: 90,
-                    height: 90,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 90,
-                      height: 90,
-                      color: Colors.grey[200],
-                      child: const Icon(
-                        Icons.image_not_supported,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(produit.imageUrl,
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                            width: 90,
+                            height: 90,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.image_not_supported,
+                                color: Colors.grey)))),
                 if (produit.videoUrl.isNotEmpty)
                   Positioned(
-                    bottom: 4,
-                    right: 4,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Icon(
-                        Icons.play_arrow,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                  ),
+                      bottom: 4,
+                      right: 4,
+                      child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(20)),
+                          child: const Icon(Icons.play_arrow,
+                              color: Colors.white, size: 16))),
               ],
             ),
             const SizedBox(width: 15),
@@ -468,53 +397,36 @@ class _EcranRechercheState extends State<EcranRecherche> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    produit.nom,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  Text(produit.nom,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 8),
-                  Text(
-                    "${produit.prix} FCFA",
-                    style: const TextStyle(
-                      color: Color(0xFFFF6D00),
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text("${produit.prix} FCFA",
+                      style: const TextStyle(
+                          color: Color(0xFFFF6D00),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
                   const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      const Icon(Icons.store, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        produit.boutique,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                    ],
-                  ),
+                  Row(children: [
+                    const Icon(Icons.store, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(produit.boutique,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12))
+                  ]),
                 ],
               ),
             ),
             Column(
               children: [
                 IconButton(
-                  icon: const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.grey,
-                    size: 18,
-                  ),
-                  onPressed: () => _afficherDetails(produit),
-                ),
+                    icon: const Icon(Icons.arrow_forward_ios,
+                        color: Colors.grey, size: 18),
+                    onPressed: () => _afficherDetails(produit)),
                 IconButton(
-                  icon: const Icon(
-                    Icons.add_shopping_cart,
-                    color: Color(0xFFFF6D00),
-                  ),
+                  icon: const Icon(Icons.add_shopping_cart,
+                      color: Color(0xFFFF6D00)),
                   onPressed: () => widget.onAjouterAuPanier(produit),
                   tooltip: "Ajouter au panier",
                 ),
@@ -538,47 +450,35 @@ class _EcranRechercheState extends State<EcranRecherche> {
         foregroundColor: Colors.white,
         title: Row(
           children: [
+            // --- LE NOUVEAU LOGO EST ICI ---
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              child: const Icon(
-                Icons.storefront,
-                size: 24,
-                color: Color(0xFFFF6D00),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.asset('assets/logo.png',
+                    height: 32, fit: BoxFit.contain),
               ),
             ),
             const SizedBox(width: 10),
-            const Text(
-              'AnKaSugu',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 22,
-                letterSpacing: 0.5,
-              ),
-            ),
+            const Text('AnKaSugu',
+                style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 22,
+                    letterSpacing: 0.5)),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
-          ),
+              icon: const Icon(Icons.notifications_none), onPressed: () {})
         ],
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF6D00)),
-            )
+              child: CircularProgressIndicator(color: Color(0xFFFF6D00)))
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -588,25 +488,19 @@ class _EcranRechercheState extends State<EcranRecherche> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30)),
                       child: TextField(
                         controller: _controller,
                         decoration: InputDecoration(
-                          hintText: 'Que cherchez-vous ?',
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Color(0xFFFF6D00),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 0,
-                          ),
-                        ),
+                            hintText: 'Que cherchez-vous ?',
+                            prefixIcon: const Icon(Icons.search,
+                                color: Color(0xFFFF6D00)),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide: BorderSide.none),
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 0)),
                         onChanged: (value) => _rechercher(),
                       ),
                     ),
@@ -618,52 +512,41 @@ class _EcranRechercheState extends State<EcranRecherche> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
                         image: const DecorationImage(
-                          image: NetworkImage(
-                            "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=800&q=80",
-                          ),
-                          fit: BoxFit.cover,
-                        ),
+                            image: NetworkImage(
+                                "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=800&q=80"),
+                            fit: BoxFit.cover),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5))
                         ],
                       ),
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Colors.black.withOpacity(0.7),
-                              Colors.transparent,
-                            ],
-                          ),
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Colors.black.withOpacity(0.7),
+                                Colors.transparent
+                              ]),
                         ),
                         padding: const EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
-                            Text(
-                              "Vendez vos produits\nsur AnKaSugu",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            Text("Vendez vos produits\nsur AnKaSugu",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold)),
                             SizedBox(height: 10),
-                            Text(
-                              "Atteignez des milliers de clients",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
+                            Text("Atteignez des milliers de clients",
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 14)),
                           ],
                         ),
                       ),
@@ -672,15 +555,10 @@ class _EcranRechercheState extends State<EcranRecherche> {
                   if (produitsALaUne.isNotEmpty &&
                       _controller.text.isEmpty) ...[
                     const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
-                      child: Text(
-                        "À la une 🔥",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                        padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
+                        child: Text("À la une 🔥",
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold))),
                     SizedBox(
                       height: 200,
                       child: ListView.builder(
@@ -695,60 +573,51 @@ class _EcranRechercheState extends State<EcranRecherche> {
                               width: 150,
                               margin: const EdgeInsets.symmetric(horizontal: 6),
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 5,
-                                  ),
-                                ],
-                              ),
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 5)
+                                  ]),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Stack(
                                     children: [
                                       ClipRRect(
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                              top: Radius.circular(12),
-                                            ),
-                                        child: Image.network(
-                                          produit.imageUrl,
-                                          height: 120,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
+                                          borderRadius:
+                                              const BorderRadius.vertical(
+                                                  top: Radius.circular(12)),
+                                          child: Image.network(produit.imageUrl,
+                                              height: 120,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error,
+                                                      stackTrace) =>
                                                   Container(
-                                                    height: 120,
-                                                    color: Colors.grey[200],
-                                                    child: const Icon(
-                                                      Icons.image,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                        ),
-                                      ),
+                                                      height: 120,
+                                                      color: Colors.grey[200],
+                                                      child: const Icon(
+                                                          Icons.image,
+                                                          color:
+                                                              Colors.grey)))),
                                       if (produit.videoUrl.isNotEmpty)
                                         Positioned(
-                                          top: 8,
-                                          right: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.red,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: const Icon(
-                                              Icons.play_arrow,
-                                              color: Colors.white,
-                                              size: 16,
-                                            ),
-                                          ),
-                                        ),
+                                            top: 8,
+                                            right: 8,
+                                            child: Container(
+                                                padding:
+                                                    const EdgeInsets.all(4),
+                                                decoration: BoxDecoration(
+                                                    color: Colors.red,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20)),
+                                                child: const Icon(
+                                                    Icons.play_arrow,
+                                                    color: Colors.white,
+                                                    size: 16))),
                                     ],
                                   ),
                                   Padding(
@@ -757,24 +626,18 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          produit.nom,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 14,
-                                          ),
-                                        ),
+                                        Text(produit.nom,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 14)),
                                         const SizedBox(height: 4),
-                                        Text(
-                                          "${produit.prix} FCFA",
-                                          style: const TextStyle(
-                                            color: Color(0xFFFF6D00),
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
-                                        ),
+                                        Text("${produit.prix} FCFA",
+                                            style: const TextStyle(
+                                                color: Color(0xFFFF6D00),
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14)),
                                       ],
                                     ),
                                   ),
@@ -787,15 +650,10 @@ class _EcranRechercheState extends State<EcranRecherche> {
                     ),
                   ],
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
-                    child: Text(
-                      "Catégories",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                      padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
+                      child: Text("Catégories",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold))),
                   SizedBox(
                     height: 40,
                     child: ListView.builder(
@@ -820,42 +678,34 @@ class _EcranRechercheState extends State<EcranRecherche> {
                             checkmarkColor: Colors.white,
                             backgroundColor: Colors.white,
                             labelStyle: TextStyle(
-                              color: estSelectionnee
-                                  ? Colors.white
-                                  : Colors.black87,
-                              fontWeight: estSelectionnee
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
+                                color: estSelectionnee
+                                    ? Colors.white
+                                    : Colors.black87,
+                                fontWeight: estSelectionnee
+                                    ? FontWeight.bold
+                                    : FontWeight.normal),
                           ),
                         );
                       },
                     ),
                   ),
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
-                    child: Text(
-                      "Tous les produits",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                      padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
+                      child: Text("Tous les produits",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold))),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: _resultats.isEmpty
                         ? const Padding(
                             padding: EdgeInsets.only(top: 40),
-                            child: Center(child: Text("Aucun produit trouvé.")),
-                          )
+                            child: Center(child: Text("Aucun produit trouvé.")))
                         : ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: _resultats.length,
                             itemBuilder: (context, index) =>
-                                _construireCarteProduit(_resultats[index]),
-                          ),
+                                _construireCarteProduit(_resultats[index])),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -882,7 +732,6 @@ class EcranPanier extends StatelessWidget {
     for (var produit in panier) {
       message +=
           "- ${produit.nom} (${produit.prix} FCFA) chez ${produit.boutique}\n";
-      // On essaie de calculer le total (attention aux formats de prix)
       String prixNettoye = produit.prix.replaceAll(RegExp(r'[^0-9]'), '');
       if (prixNettoye.isNotEmpty) {
         total += int.parse(prixNettoye);
@@ -892,26 +741,20 @@ class EcranPanier extends StatelessWidget {
     message += "\nTotal estimé : $total FCFA";
     message += "\n\nMerci de me confirmer la disponibilité.";
 
-    // On envoie à un numéro générique ou au premier vendeur
-    // Pour l'instant, on utilise un numéro de test ou le premier de la liste
-    String numero = "22376000000"; // Remplacez par votre numéro admin
+    String numero = "22376000000"; // Numéro admin par défaut
     if (panier.isNotEmpty) {
       numero = panier.first.telephone.replaceAll(RegExp(r'[^0-9]'), '');
       if (numero.isNotEmpty && !numero.startsWith('223')) numero = '223$numero';
     }
 
-    final url = Uri.parse(
-      "https://wa.me/$numero?text=${Uri.encodeComponent(message)}",
-    );
+    final url =
+        Uri.parse("https://wa.me/$numero?text=${Uri.encodeComponent(message)}");
 
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text("Impossible d'ouvrir WhatsApp."),
-          backgroundColor: Colors.red,
-        ),
-      );
+          backgroundColor: Colors.red));
     }
   }
 
@@ -925,29 +768,21 @@ class EcranPanier extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mon Panier'),
-        backgroundColor: const Color(0xFFFF6D00),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+          title: const Text('Mon Panier'),
+          backgroundColor: const Color(0xFFFF6D00),
+          foregroundColor: Colors.white,
+          elevation: 0),
       body: panier.isEmpty
           ? const Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 80,
-                    color: Colors.grey,
-                  ),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                  Icon(Icons.shopping_cart_outlined,
+                      size: 80, color: Colors.grey),
                   SizedBox(height: 20),
-                  Text(
-                    "Votre panier est vide",
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                ],
-              ),
-            )
+                  Text("Votre panier est vide",
+                      style: TextStyle(fontSize: 18, color: Colors.grey))
+                ]))
           : Column(
               children: [
                 Expanded(
@@ -960,22 +795,18 @@ class EcranPanier extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 10),
                         child: ListTile(
                           leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              produit.imageUrl,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.image),
-                            ),
-                          ),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(produit.imageUrl,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.image))),
                           title: Text(produit.nom),
                           subtitle: Text("${produit.prix} FCFA"),
                           trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => onRetirer(index),
-                          ),
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => onRetirer(index)),
                         ),
                       );
                     },
@@ -984,52 +815,37 @@ class EcranPanier extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                  ),
+                      color: Colors.white,
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20))),
                   child: Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Total estimé :",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            "$total FCFA",
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFFF6D00),
-                            ),
-                          ),
-                        ],
-                      ),
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text("Total estimé :",
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text("$total FCFA",
+                                style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFFF6D00))),
+                          ]),
                       const SizedBox(height: 15),
                       ElevatedButton.icon(
                         onPressed: () => _commanderViaWhatsApp(context),
                         icon: const Icon(Icons.chat, color: Colors.white),
-                        label: const Text(
-                          "Commander via WhatsApp",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        label: const Text("Commander via WhatsApp",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          minimumSize: const Size(double.infinity, 55),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                            backgroundColor: Colors.green,
+                            minimumSize: const Size(double.infinity, 55),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12))),
                       ),
                     ],
                   ),
@@ -1060,14 +876,12 @@ class _EcranConnexionState extends State<EcranConnexion> {
     try {
       if (_isLogin) {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim());
       } else {
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim());
       }
     } on FirebaseAuthException catch (e) {
       String message = "Erreur de connexion.";
@@ -1077,8 +891,7 @@ class _EcranConnexionState extends State<EcranConnexion> {
       if (e.code == 'weak-password') message = "Mot de passe trop court.";
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
+          SnackBar(content: Text(message), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -1088,109 +901,78 @@ class _EcranConnexionState extends State<EcranConnexion> {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFF6D00), Color(0xFFF5F7FA)],
-        ),
-      ),
+          gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFFF6D00), Color(0xFFF5F7FA)])),
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Card(
             elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.orange[50],
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.storefront,
-                      size: 60,
-                      color: Color(0xFFFF6D00),
-                    ),
-                  ),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                          color: Colors.orange[50], shape: BoxShape.circle),
+                      child: const Icon(Icons.storefront,
+                          size: 60, color: Color(0xFFFF6D00))),
                   const SizedBox(height: 20),
-                  Text(
-                    _isLogin ? "Espace Vendeur" : "Devenir Vendeur",
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                  Text(_isLogin ? "Espace Vendeur" : "Devenir Vendeur",
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center),
                   const SizedBox(height: 30),
                   TextField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: "Email",
-                      prefixIcon: const Icon(
-                        Icons.email_outlined,
-                        color: Color(0xFFFF6D00),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                          labelText: "Email",
+                          prefixIcon: const Icon(Icons.email_outlined,
+                              color: Color(0xFFFF6D00)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: Colors.grey[50]),
+                      keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 15),
                   TextField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: "Mot de passe",
-                      prefixIcon: const Icon(
-                        Icons.lock_outline,
-                        color: Color(0xFFFF6D00),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                    obscureText: true,
-                  ),
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                          labelText: "Mot de passe",
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: Color(0xFFFF6D00)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: Colors.grey[50]),
+                      obscureText: true),
                   const SizedBox(height: 25),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _soumettre,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6D00),
-                      minimumSize: const Size(double.infinity, 55),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                        backgroundColor: const Color(0xFFFF6D00),
+                        minimumSize: const Size(double.infinity, 55),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12))),
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                            _isLogin ? "Se connecter" : "S'inscrire",
+                        : Text(_isLogin ? "Se connecter" : "S'inscrire",
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
                   ),
                   TextButton(
-                    onPressed: () => setState(() => _isLogin = !_isLogin),
-                    child: Text(
-                      _isLogin
+                      onPressed: () => setState(() => _isLogin = !_isLogin),
+                      child: Text(_isLogin
                           ? "Pas de compte ? S'inscrire"
-                          : "Déjà un compte ? Se connecter",
-                    ),
-                  ),
+                          : "Déjà un compte ? Se connecter")),
                 ],
               ),
             ),
@@ -1217,45 +999,33 @@ class EcranProfil extends StatelessWidget {
         final user = snapshot.data;
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Mon Espace Vendeur'),
-            backgroundColor: const Color(0xFFFF6D00),
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ),
+              title: const Text('Mon Espace Vendeur'),
+              backgroundColor: const Color(0xFFFF6D00),
+              foregroundColor: Colors.white,
+              elevation: 0),
           body: Column(
             children: [
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFF6D00),
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(20),
-                  ),
-                ),
+                    color: Color(0xFFFF6D00),
+                    borderRadius:
+                        BorderRadius.vertical(bottom: Radius.circular(20))),
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(15),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.store,
-                        size: 40,
-                        color: Color(0xFFFF6D00),
-                      ),
-                    ),
+                        padding: const EdgeInsets.all(15),
+                        decoration: const BoxDecoration(
+                            color: Colors.white, shape: BoxShape.circle),
+                        child: const Icon(Icons.store,
+                            size: 40, color: Color(0xFFFF6D00))),
                     const SizedBox(height: 10),
-                    Text(
-                      user?.email ?? "Vendeur AnKaSugu",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text(user?.email ?? "Vendeur AnKaSugu",
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
                   ],
                 ),
               ),
@@ -1263,41 +1033,31 @@ class EcranProfil extends StatelessWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton.icon(
                   onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const EcranAjouterProduit(),
-                    ),
-                  ),
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const EcranAjouterProduit())),
                   icon: const Icon(Icons.add_business, color: Colors.white),
-                  label: const Text(
-                    "Ajouter un nouveau produit",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  label: const Text("Ajouter un nouveau produit",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6D00),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                    minimumSize: const Size(double.infinity, 55),
-                  ),
+                      backgroundColor: const Color(0xFFFF6D00),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 55)),
                 ),
               ),
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Mes produits en vente",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Mes produits en vente",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)))),
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
@@ -1307,16 +1067,12 @@ class EcranProfil extends StatelessWidget {
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting)
                       return const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFFFF6D00),
-                        ),
-                      );
+                          child: CircularProgressIndicator(
+                              color: Color(0xFFFF6D00)));
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
                       return const Center(
-                        child: Text(
-                          "Vous n'avez pas encore ajouté de produit.",
-                        ),
-                      );
+                          child: Text(
+                              "Vous n'avez pas encore ajouté de produit."));
 
                     return ListView.builder(
                       padding: const EdgeInsets.all(16),
@@ -1328,16 +1084,14 @@ class EcranProfil extends StatelessWidget {
                           margin: const EdgeInsets.only(bottom: 10),
                           child: ListTile(
                             leading: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                data['imageUrl'] ?? '',
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.image),
-                              ),
-                            ),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(data['imageUrl'] ?? '',
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Icon(Icons.image))),
                             title: Text(data['nom'] ?? 'Sans nom'),
                             subtitle: Text("${data['prix']} FCFA"),
                             trailing: IconButton(
@@ -1348,25 +1102,20 @@ class EcranProfil extends StatelessWidget {
                                   builder: (context) => AlertDialog(
                                     title: const Text("Supprimer le produit ?"),
                                     content: const Text(
-                                      "Voulez-vous vraiment retirer ce produit de la vente ?",
-                                    ),
+                                        "Voulez-vous vraiment retirer ce produit de la vente ?"),
                                     actions: [
                                       TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text("Annuler"),
-                                      ),
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text("Annuler")),
                                       ElevatedButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                        ),
-                                        child: const Text(
-                                          "Supprimer",
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red),
+                                          child: const Text("Supprimer",
+                                              style: TextStyle(
+                                                  color: Colors.white))),
                                     ],
                                   ),
                                 );
@@ -1392,18 +1141,14 @@ class EcranProfil extends StatelessWidget {
                     await FirebaseAuth.instance.signOut();
                   },
                   icon: const Icon(Icons.logout, color: Colors.red),
-                  label: const Text(
-                    "Se déconnecter",
-                    style: TextStyle(color: Colors.red, fontSize: 16),
-                  ),
+                  label: const Text("Se déconnecter",
+                      style: TextStyle(color: Colors.red, fontSize: 16)),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    side: const BorderSide(color: Colors.red),
-                    minimumSize: const Size(double.infinity, 55),
-                  ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      side: const BorderSide(color: Colors.red),
+                      minimumSize: const Size(double.infinity, 55)),
                 ),
               ),
             ],
@@ -1437,17 +1182,14 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
     'Téléphones',
     'Vêtements',
     'Chaussures',
-    'Autres',
+    'Autres'
   ];
 
   void _sauvegarderProduit() async {
     if (_nomController.text.isEmpty || _prixController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text("Le nom et le prix sont obligatoires."),
-          backgroundColor: Colors.red,
-        ),
-      );
+          backgroundColor: Colors.red));
       return;
     }
 
@@ -1480,18 +1222,14 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
       _telephoneController.clear();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text("Produit mis en vente avec succès !"),
-          backgroundColor: Colors.green,
-        ),
-      );
+          backgroundColor: Colors.green));
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur : $e"), backgroundColor: Colors.red),
-      );
+          SnackBar(content: Text("Erreur : $e"), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -1501,150 +1239,119 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nouveau Produit'),
-        backgroundColor: const Color(0xFFFF6D00),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+          title: const Text('Nouveau Produit'),
+          backgroundColor: const Color(0xFFFF6D00),
+          foregroundColor: Colors.white,
+          elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              "Détails du produit",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            const Text("Détails du produit",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             TextField(
-              controller: _imageController,
-              decoration: InputDecoration(
-                labelText: "Lien de l'image (URL)",
-                prefixIcon: const Icon(Icons.image, color: Color(0xFFFF6D00)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                fillColor: Colors.white,
-                filled: true,
-              ),
-              onChanged: (value) => setState(() {}),
-            ),
+                controller: _imageController,
+                decoration: InputDecoration(
+                    labelText: "Lien de l'image (URL)",
+                    prefixIcon:
+                        const Icon(Icons.image, color: Color(0xFFFF6D00)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    fillColor: Colors.white,
+                    filled: true),
+                onChanged: (value) => setState(() {})),
             const SizedBox(height: 15),
             TextField(
-              controller: _videoController,
-              decoration: InputDecoration(
-                labelText: "Lien de la vidéo (TikTok, YouTube...)",
-                prefixIcon: const Icon(
-                  Icons.video_camera_front,
-                  color: Colors.red,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                fillColor: Colors.white,
-                filled: true,
-                helperText:
-                    "Optionnel. Collez le lien de la vidéo de votre produit.",
-              ),
-            ),
+                controller: _videoController,
+                decoration: InputDecoration(
+                    labelText: "Lien de la vidéo (TikTok, YouTube...)",
+                    prefixIcon:
+                        const Icon(Icons.video_camera_front, color: Colors.red),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    fillColor: Colors.white,
+                    filled: true,
+                    helperText:
+                        "Optionnel. Collez le lien de la vidéo de votre produit.")),
             const SizedBox(height: 15),
             DropdownButtonFormField<String>(
               value: _categorieSelectionnee,
               decoration: InputDecoration(
-                labelText: "Catégorie",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                fillColor: Colors.white,
-                filled: true,
-                prefixIcon: const Icon(
-                  Icons.category,
-                  color: Color(0xFFFF6D00),
-                ),
-              ),
+                  labelText: "Catégorie",
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  fillColor: Colors.white,
+                  filled: true,
+                  prefixIcon:
+                      const Icon(Icons.category, color: Color(0xFFFF6D00))),
               items: _categories
-                  .map(
-                    (String cat) =>
-                        DropdownMenuItem(value: cat, child: Text(cat)),
-                  )
+                  .map((String cat) =>
+                      DropdownMenuItem(value: cat, child: Text(cat)))
                   .toList(),
               onChanged: (String? nouvelleValeur) =>
                   setState(() => _categorieSelectionnee = nouvelleValeur!),
             ),
             const SizedBox(height: 15),
             TextField(
-              controller: _nomController,
-              decoration: InputDecoration(
-                labelText: "Nom du produit *",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                fillColor: Colors.white,
-                filled: true,
-              ),
-            ),
+                controller: _nomController,
+                decoration: InputDecoration(
+                    labelText: "Nom du produit *",
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    fillColor: Colors.white,
+                    filled: true)),
             const SizedBox(height: 15),
             TextField(
-              controller: _prixController,
-              decoration: InputDecoration(
-                labelText: "Prix (ex: 10 000) *",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                fillColor: Colors.white,
-                filled: true,
-                suffixText: "FCFA",
-              ),
-              keyboardType: TextInputType.number,
-            ),
+                controller: _prixController,
+                decoration: InputDecoration(
+                    labelText: "Prix (ex: 10 000) *",
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    fillColor: Colors.white,
+                    filled: true,
+                    suffixText: "FCFA"),
+                keyboardType: TextInputType.number),
             const SizedBox(height: 15),
             TextField(
-              controller: _boutiqueController,
-              decoration: InputDecoration(
-                labelText: "Nom de votre boutique",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                fillColor: Colors.white,
-                filled: true,
-                prefixIcon: const Icon(Icons.store, color: Color(0xFFFF6D00)),
-              ),
-            ),
+                controller: _boutiqueController,
+                decoration: InputDecoration(
+                    labelText: "Nom de votre boutique",
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    fillColor: Colors.white,
+                    filled: true,
+                    prefixIcon:
+                        const Icon(Icons.store, color: Color(0xFFFF6D00)))),
             const SizedBox(height: 15),
             TextField(
-              controller: _telephoneController,
-              decoration: InputDecoration(
-                labelText: "Numéro WhatsApp (ex: 76 00 00 00)",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                fillColor: Colors.white,
-                filled: true,
-                prefixIcon: const Icon(Icons.phone, color: Color(0xFFFF6D00)),
-              ),
-              keyboardType: TextInputType.phone,
-            ),
+                controller: _telephoneController,
+                decoration: InputDecoration(
+                    labelText: "Numéro WhatsApp (ex: 76 00 00 00)",
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    fillColor: Colors.white,
+                    filled: true,
+                    prefixIcon:
+                        const Icon(Icons.phone, color: Color(0xFFFF6D00))),
+                keyboardType: TextInputType.phone),
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: _isSaving ? null : _sauvegarderProduit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6D00),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
+                  backgroundColor: const Color(0xFFFF6D00),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 0),
               child: _isSaving
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      "Mettre en vente",
+                  : const Text("Mettre en vente",
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
             ),
           ],
         ),

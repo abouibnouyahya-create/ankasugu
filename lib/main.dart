@@ -34,26 +34,37 @@ class MonApplication extends StatelessWidget {
   }
 }
 
-// --- MODÈLE DE DONNÉES ---
+// --- MODÈLE DE DONNÉES (Ajout de l'adresse) ---
 class Produit {
   final String id;
   final String nom;
   final String prix;
   final String boutique;
+  final String adresse; // NOUVEAU
   final String imageUrl;
   final String videoUrl;
   final String telephone;
   final String categorie;
   final String vendeurId;
 
-  Produit(this.id, this.nom, this.prix, this.boutique, this.imageUrl,
-      this.videoUrl, this.telephone, this.categorie, this.vendeurId);
+  Produit(
+      this.id,
+      this.nom,
+      this.prix,
+      this.boutique,
+      this.adresse,
+      this.imageUrl,
+      this.videoUrl,
+      this.telephone,
+      this.categorie,
+      this.vendeurId);
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'nom': nom,
         'prix': prix,
         'boutique': boutique,
+        'adresse': adresse,
         'imageUrl': imageUrl,
         'videoUrl': videoUrl,
         'telephone': telephone,
@@ -66,6 +77,7 @@ class Produit {
         json['nom'] ?? '',
         json['prix'] ?? '',
         json['boutique'] ?? '',
+        json['adresse'] ?? '',
         json['imageUrl'] ?? '',
         json['videoUrl'] ?? '',
         json['telephone'] ?? '',
@@ -85,6 +97,7 @@ class PagePrincipale extends StatefulWidget {
 class _PagePrincipaleState extends State<PagePrincipale> {
   int _indexActif = 0;
   List<Produit> _panier = [];
+  String _categorieRecherchee = 'Tout';
 
   @override
   void initState() {
@@ -129,15 +142,24 @@ class _PagePrincipaleState extends State<PagePrincipale> {
     _sauvegarderPanier();
   }
 
+  void _allerVersRecherche(String categorie) {
+    setState(() {
+      _categorieRecherchee = categorie;
+      _indexActif = 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _indexActif,
         children: [
-          EcranRecherche(onAjouterAuPanier: _ajouterAuPanier),
-          const Scaffold(
-              body: Center(child: Text("Page Catégories (Bientôt)"))),
+          EcranRecherche(
+            onAjouterAuPanier: _ajouterAuPanier,
+            categorieInitiale: _categorieRecherchee,
+          ),
+          EcranCategories(onCategorieSelectionnee: _allerVersRecherche),
           EcranPanier(panier: _panier, onRetirer: _retirerDuPanier),
           const EcranProfil(),
         ],
@@ -171,10 +193,101 @@ class _PagePrincipaleState extends State<PagePrincipale> {
   }
 }
 
-// --- ÉCRAN DE RECHERCHE ---
+// --- ÉCRAN DES CATÉGORIES ---
+class EcranCategories extends StatelessWidget {
+  final Function(String) onCategorieSelectionnee;
+  const EcranCategories({super.key, required this.onCategorieSelectionnee});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Map<String, dynamic>> categories = [
+      {'nom': 'Parfums', 'icone': Icons.spa, 'couleur': Colors.pink},
+      {
+        'nom': 'Téléphones',
+        'icone': Icons.phone_android,
+        'couleur': Colors.blue
+      },
+      {'nom': 'Vêtements', 'icone': Icons.checkroom, 'couleur': Colors.purple},
+      {
+        'nom': 'Chaussures',
+        'icone': Icons.shopping_bag,
+        'couleur': Colors.brown
+      },
+      {'nom': 'Voyages', 'icone': Icons.flight_takeoff, 'couleur': Colors.teal},
+      {'nom': 'Services', 'icone': Icons.handyman, 'couleur': Colors.orange},
+      {'nom': 'Autres', 'icone': Icons.more_horiz, 'couleur': Colors.grey},
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Toutes les Catégories'),
+        backgroundColor: const Color(0xFFFF6D00),
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: GridView.builder(
+          itemCount: categories.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 15,
+            mainAxisSpacing: 15,
+            childAspectRatio: 1.0,
+          ),
+          itemBuilder: (context, index) {
+            final cat = categories[index];
+            return GestureDetector(
+              onTap: () => onCategorieSelectionnee(cat['nom']),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2))
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cat['couleur'].withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child:
+                          Icon(cat['icone'], size: 32, color: cat['couleur']),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      cat['nom'],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// --- ÉCRAN DE RECHERCHE (Affiche maintenant l'adresse) ---
 class EcranRecherche extends StatefulWidget {
   final Function(Produit) onAjouterAuPanier;
-  const EcranRecherche({super.key, required this.onAjouterAuPanier});
+  final String categorieInitiale;
+  const EcranRecherche(
+      {super.key,
+      required this.onAjouterAuPanier,
+      required this.categorieInitiale});
 
   @override
   State<EcranRecherche> createState() => _EcranRechercheState();
@@ -194,6 +307,8 @@ class _EcranRechercheState extends State<EcranRecherche> {
     'Téléphones',
     'Vêtements',
     'Chaussures',
+    'Voyages',
+    'Services',
     'Autres'
   ];
   String _categorieSelectionnee = 'Tout';
@@ -201,7 +316,19 @@ class _EcranRechercheState extends State<EcranRecherche> {
   @override
   void initState() {
     super.initState();
+    _categorieSelectionnee = widget.categorieInitiale;
     _chargerProduits();
+  }
+
+  @override
+  void didUpdateWidget(covariant EcranRecherche oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.categorieInitiale != widget.categorieInitiale) {
+      setState(() {
+        _categorieSelectionnee = widget.categorieInitiale;
+        _rechercher();
+      });
+    }
   }
 
   void _chargerProduits() async {
@@ -210,10 +337,9 @@ class _EcranRechercheState extends State<EcranRecherche> {
         _tousLesProduits = snapshot.docs.map((doc) {
           final data = doc.data();
           return Produit(
-            doc.id,
-            data['nom'] ?? 'Sans nom',
-            data['prix'] ?? '0 FCFA',
+            doc.id, data['nom'] ?? 'Sans nom', data['prix'] ?? '0 FCFA',
             data['boutique'] ?? 'Inconnue',
+            data['adresse'] ?? 'Adresse non renseignée', // NOUVEAU
             data['imageUrl'] ?? '',
             data['videoUrl'] ?? '',
             data['telephone'] ?? '',
@@ -247,7 +373,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
     String numero = produit.telephone.replaceAll(RegExp(r'[^0-9]'), '');
     if (numero.isNotEmpty && !numero.startsWith('223')) numero = '223$numero';
     final message = Uri.encodeComponent(
-        "Bonjour, je suis intéressé par votre produit : ${produit.nom} à ${produit.prix} sur AnKaSugu.");
+        "Bonjour, je suis intéressé par votre offre : ${produit.nom} à ${produit.prix} sur AnKaSugu. (Adresse : ${produit.adresse})");
     final url = Uri.parse("https://wa.me/$numero?text=$message");
 
     if (numero.isEmpty) {
@@ -304,7 +430,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                     },
                     icon: const Icon(Icons.play_circle_fill,
                         color: Colors.red, size: 24),
-                    label: const Text("Voir la vidéo du produit",
+                    label: const Text("Voir la vidéo",
                         style: TextStyle(
                             color: Colors.red, fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
@@ -325,8 +451,22 @@ class _EcranRechercheState extends State<EcranRecherche> {
                         fontSize: 20,
                         color: Color(0xFFFF6D00))),
                 const SizedBox(height: 8),
-                Text("Boutique : ${produit.boutique}",
+                Text("Boutique/Agence : ${produit.boutique}",
                     style: const TextStyle(fontSize: 16)),
+                const SizedBox(height: 8),
+                // NOUVEAU : AFFICHAGE DE L'ADRESSE
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.red, size: 18),
+                    const SizedBox(width: 5),
+                    Expanded(
+                        child: Text("Adresse : ${produit.adresse}",
+                            style: const TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center)),
+                  ],
+                ),
               ],
             ),
           ),
@@ -409,6 +549,20 @@ class _EcranRechercheState extends State<EcranRecherche> {
                           fontSize: 18,
                           fontWeight: FontWeight.bold)),
                   const SizedBox(height: 5),
+                  // NOUVEAU : AFFICHAGE DE L'ADRESSE
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on,
+                          size: 14, color: Colors.red),
+                      const SizedBox(width: 4),
+                      Expanded(
+                          child: Text(produit.adresse,
+                              style: TextStyle(
+                                  color: Colors.grey[600], fontSize: 12),
+                              overflow: TextOverflow.ellipsis)),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
                   Row(children: [
                     const Icon(Icons.store, size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
@@ -450,13 +604,10 @@ class _EcranRechercheState extends State<EcranRecherche> {
         foregroundColor: Colors.white,
         title: Row(
           children: [
-            // --- LE NOUVEAU LOGO EST ICI ---
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
+                  color: Colors.white, borderRadius: BorderRadius.circular(8)),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: Image.asset('assets/logo.png',
@@ -538,7 +689,8 @@ class _EcranRechercheState extends State<EcranRecherche> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
-                            Text("Vendez vos produits\nsur AnKaSugu",
+                            Text(
+                                "Vendez vos produits\nou services sur AnKaSugu",
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,
@@ -691,7 +843,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                   ),
                   const Padding(
                       padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
-                      child: Text("Tous les produits",
+                      child: Text("Toutes les offres",
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold))),
                   Padding(
@@ -699,7 +851,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                     child: _resultats.isEmpty
                         ? const Padding(
                             padding: EdgeInsets.only(top: 40),
-                            child: Center(child: Text("Aucun produit trouvé.")))
+                            child: Center(child: Text("Aucune offre trouvée.")))
                         : ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -726,12 +878,12 @@ class EcranPanier extends StatelessWidget {
     if (panier.isEmpty) return;
 
     String message =
-        "Bonjour AnKaSugu, je souhaite commander les produits suivants :\n\n";
+        "Bonjour AnKaSugu, je souhaite commander les offres suivantes :\n\n";
     int total = 0;
 
     for (var produit in panier) {
       message +=
-          "- ${produit.nom} (${produit.prix} FCFA) chez ${produit.boutique}\n";
+          "- ${produit.nom} (${produit.prix} FCFA) - ${produit.boutique}\n";
       String prixNettoye = produit.prix.replaceAll(RegExp(r'[^0-9]'), '');
       if (prixNettoye.isNotEmpty) {
         total += int.parse(prixNettoye);
@@ -741,7 +893,7 @@ class EcranPanier extends StatelessWidget {
     message += "\nTotal estimé : $total FCFA";
     message += "\n\nMerci de me confirmer la disponibilité.";
 
-    String numero = "22376000000"; // Numéro admin par défaut
+    String numero = "22376000000";
     if (panier.isNotEmpty) {
       numero = panier.first.telephone.replaceAll(RegExp(r'[^0-9]'), '');
       if (numero.isNotEmpty && !numero.startsWith('223')) numero = '223$numero';
@@ -1037,7 +1189,7 @@ class EcranProfil extends StatelessWidget {
                       MaterialPageRoute(
                           builder: (context) => const EcranAjouterProduit())),
                   icon: const Icon(Icons.add_business, color: Colors.white),
-                  label: const Text("Ajouter un nouveau produit",
+                  label: const Text("Publier une nouvelle offre",
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -1055,7 +1207,7 @@ class EcranProfil extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
                   child: Align(
                       alignment: Alignment.centerLeft,
-                      child: Text("Mes produits en vente",
+                      child: Text("Mes offres en ligne",
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold)))),
               Expanded(
@@ -1071,8 +1223,8 @@ class EcranProfil extends StatelessWidget {
                               color: Color(0xFFFF6D00)));
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
                       return const Center(
-                          child: Text(
-                              "Vous n'avez pas encore ajouté de produit."));
+                          child:
+                              Text("Vous n'avez pas encore publié d'offre."));
 
                     return ListView.builder(
                       padding: const EdgeInsets.all(16),
@@ -1100,9 +1252,9 @@ class EcranProfil extends StatelessWidget {
                                 bool? confirm = await showDialog<bool>(
                                   context: context,
                                   builder: (context) => AlertDialog(
-                                    title: const Text("Supprimer le produit ?"),
+                                    title: const Text("Supprimer l'offre ?"),
                                     content: const Text(
-                                        "Voulez-vous vraiment retirer ce produit de la vente ?"),
+                                        "Voulez-vous vraiment retirer cette offre ?"),
                                     actions: [
                                       TextButton(
                                           onPressed: () =>
@@ -1159,7 +1311,7 @@ class EcranProfil extends StatelessWidget {
   }
 }
 
-// --- ÉCRAN D'AJOUT DE PRODUIT ---
+// --- ÉCRAN D'AJOUT DE PRODUIT / SERVICE ---
 class EcranAjouterProduit extends StatefulWidget {
   const EcranAjouterProduit({super.key});
   @override
@@ -1170,6 +1322,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
   final _nomController = TextEditingController();
   final _prixController = TextEditingController();
   final _boutiqueController = TextEditingController();
+  final _adresseController = TextEditingController(); // NOUVEAU
   final _imageController = TextEditingController();
   final _videoController = TextEditingController();
   final _telephoneController = TextEditingController();
@@ -1182,6 +1335,8 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
     'Téléphones',
     'Vêtements',
     'Chaussures',
+    'Voyages',
+    'Services',
     'Autres'
   ];
 
@@ -1202,8 +1357,11 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
         'nom': _nomController.text,
         'prix': _prixController.text,
         'boutique': _boutiqueController.text.isEmpty
-            ? "Boutique inconnue"
+            ? "Inconnue"
             : _boutiqueController.text,
+        'adresse': _adresseController.text.isEmpty
+            ? "Adresse non renseignée"
+            : _adresseController.text, // NOUVEAU
         'imageUrl': _imageController.text.isEmpty
             ? "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=80"
             : _imageController.text,
@@ -1217,13 +1375,14 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
       _nomController.clear();
       _prixController.clear();
       _boutiqueController.clear();
+      _adresseController.clear();
       _imageController.clear();
       _videoController.clear();
       _telephoneController.clear();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text("Produit mis en vente avec succès !"),
+          content: Text("Offre publiée avec succès !"),
           backgroundColor: Colors.green));
       Navigator.pop(context);
     } catch (e) {
@@ -1239,7 +1398,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Nouveau Produit'),
+          title: const Text('Nouvelle Offre'),
           backgroundColor: const Color(0xFFFF6D00),
           foregroundColor: Colors.white,
           elevation: 0),
@@ -1248,7 +1407,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text("Détails du produit",
+            const Text("Détails de l'offre",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             TextField(
@@ -1274,7 +1433,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
                     fillColor: Colors.white,
                     filled: true,
                     helperText:
-                        "Optionnel. Collez le lien de la vidéo de votre produit.")),
+                        "Optionnel. Collez le lien de la vidéo de votre offre.")),
             const SizedBox(height: 15),
             DropdownButtonFormField<String>(
               value: _categorieSelectionnee,
@@ -1297,7 +1456,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
             TextField(
                 controller: _nomController,
                 decoration: InputDecoration(
-                    labelText: "Nom du produit *",
+                    labelText: "Titre de l'offre *",
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     fillColor: Colors.white,
@@ -1317,13 +1476,25 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
             TextField(
                 controller: _boutiqueController,
                 decoration: InputDecoration(
-                    labelText: "Nom de votre boutique",
+                    labelText: "Nom de votre boutique ou agence",
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     fillColor: Colors.white,
                     filled: true,
                     prefixIcon:
                         const Icon(Icons.store, color: Color(0xFFFF6D00)))),
+            const SizedBox(height: 15),
+            // NOUVEAU CHAMP ADRESSE
+            TextField(
+                controller: _adresseController,
+                decoration: InputDecoration(
+                    labelText: "Adresse (ex: Bamako, Hamdallaye ACI)",
+                    prefixIcon:
+                        const Icon(Icons.location_on, color: Colors.red),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    fillColor: Colors.white,
+                    filled: true)),
             const SizedBox(height: 15),
             TextField(
                 controller: _telephoneController,
@@ -1347,7 +1518,7 @@ class _EcranAjouterProduitState extends State<EcranAjouterProduit> {
                   elevation: 0),
               child: _isSaving
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Mettre en vente",
+                  : const Text("Publier l'offre",
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
